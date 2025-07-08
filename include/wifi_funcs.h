@@ -14,6 +14,8 @@ bool connect_to_network(void);
 
 bool connect_to_network_creds(const char* ssid, const char* password);
 
+const char* rrsi_to_str(int rssi);
+
 void wifi_init(void);
 
 #endif

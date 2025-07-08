@@ -1,5 +1,20 @@
 #include "wifi_funcs.h"
 
+const char* rssi_to_str(int8_t rssi) {
+    if(rssi >= -50) {
+        return "Excellent";
+    } else if(rssi <= -51 && rssi >= -60) {
+        return "Good";
+    } else if(rssi <= -60 && rssi >= -70) {
+        return "Fair";
+    } else if(rssi <= -71 && rssi >= -85) {
+        return "Poor";
+    } else if(rssi <= -86) {
+        return "Unreliable";
+    }
+    return "";
+}
+
 bool err_handle(esp_err_t err){
     switch(err){
         case ESP_ERR_WIFI_NOT_INIT:
@@ -53,11 +68,15 @@ bool search_ssid(const char* ssid) {
     
     bool found = false;
 
-    for(int i = 0; i < num; i++){
-        ESP_LOGI("INFO", "Found SSID: %s", records[i].ssid);
-        if(strcmp((const char*)records[i].ssid,ssid) == 0) {
-            found = true;
+    if(num > 0){
+        ESP_LOGI("INFO", "------------[WIFI SCAN]------------");
+        for(int i = 0; i < num; i++){
+            ESP_LOGI("INFO", "SSID: %s -> Signal Strength: %s (%d dBm)", records[i].ssid, rssi_to_str(records[i].rssi), records[i].rssi);
+            if(strcmp((const char*)records[i].ssid,ssid) == 0) {
+                found = true;
+            }
         }
+        ESP_LOGI("INFO", "-----------------------------------");
     }
     free(records);
     return found;
