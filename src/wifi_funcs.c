@@ -138,8 +138,8 @@ void wifi_init() {
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    uint8_t mac[6] = {0};
+    uint8_t mac[6];
     ESP_ERROR_CHECK(esp_netif_get_mac(netift, mac));
 
-    ESP_LOGI("INFO", "esp's MAC ADDRESS: %s",mac);
+    ESP_LOGI("INFO", "ESP32 Interface MAC ADDRESS: %X:%X:%X:%X:%X:%X",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 }
