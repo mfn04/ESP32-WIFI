@@ -35,7 +35,7 @@ bool err_handle(esp_err_t err){
     }
 }
 
-bool ssid_found(const char* ssid) {
+bool search_ssid(const char* ssid) {
 
     esp_err_t err = esp_wifi_scan_start(NULL, true);
     
@@ -44,10 +44,10 @@ bool ssid_found(const char* ssid) {
     uint16_t num = 0;
 
     esp_wifi_scan_get_ap_num(&num);
-    ESP_LOGI("INFO", "WiFi APs Found: %d", num);
+    ESP_LOGI("INFO", "Number of WiFi APs Found: %d", num);
 
 
-    wifi_ap_record_t* records = (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t)*num);
+    wifi_ap_record_t* records = (wifi_ap_record_t*)calloc(num,sizeof(wifi_ap_record_t));
 
     esp_wifi_scan_get_ap_records(&num, records);
     
@@ -63,58 +63,64 @@ bool ssid_found(const char* ssid) {
     return found;
 }
 
-bool connect_to_network(const char* ssid, const char* password) {
+bool connect_to_network(){
+    const int SSID_SIZE = 32;
+    char ssid[SSID_SIZE];
+    printf("Write the SSID you would like to connect to: \n");
+    get_input(ssid,SSID_SIZE);
+
+    const int PASS_SIZE = 64;
+    char password[PASS_SIZE];
+    printf("Write the password: \n");
+    get_input(password,PASS_SIZE);
+
+    bool found = search_ssid(ssid);
+
+    if(found){
+        ESP_LOGI("INFO","Successfully found the WiFi AP '%s'!", ssid);
+        return connect_to_network_creds(ssid,password);
+    } else {
+        ESP_LOGW("WARN","WiFi AP '%s' was not found!", ssid);
+        return false;
+    }
+}
+
+bool connect_to_network_creds(const char* ssid, const char* password) {
+    ESP_LOGI("INFO", "Attempting to connect to the WiFi network...");
     wifi_interface_t interface = WIFI_IF_STA;
     wifi_config_t conf = {};
-    strncpy((char*)conf.sta.ssid,ssid,sizeof(conf.sta.ssid));
-    strncpy((char*)conf.sta.password,password,sizeof(conf.sta.password));
+    strncpy((char*)conf.sta.ssid, ssid, sizeof(conf.sta.ssid));
+    strncpy((char*)conf.sta.password, password, sizeof(conf.sta.password));
 
     ESP_ERROR_CHECK(esp_wifi_set_config(interface, &conf));
 
     esp_err_t err = esp_wifi_connect();
 
-    if(!err_handle(err)) return false;
+    if(!err_handle(err)) {
+        ESP_LOGW("WARN", "Failed to connect to the WiFi network '%s'!", ssid);
+        return false;
+    }
 
     ESP_LOGI("INFO", "Successfully connected to the WiFi network '%s'!", ssid);
     return true;
 
 }
 
-void wifi_init(void*) {
+void wifi_init() {
+    ESP_ERROR_CHECK(esp_netif_init());
+
     wifi_init_config_t conf = WIFI_INIT_CONFIG_DEFAULT();
 
     esp_netif_t* netift = esp_netif_create_default_wifi_sta();
 
-    esp_wifi_init(&conf);
+    ESP_ERROR_CHECK(esp_wifi_init(&conf));
 
-    esp_wifi_set_mode(WIFI_MODE_APSTA);
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
-    esp_wifi_start();
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     uint8_t mac[6] = {0};
     ESP_ERROR_CHECK(esp_netif_get_mac(netift, mac));
 
     ESP_LOGI("INFO", "esp's MAC ADDRESS: %s",mac);
-
-    char ssid[32];
-    printf("Write the SSID you would like to connect to: \n");
-    fgets(ssid,sizeof(ssid), stdin);
-
-    char password[64];
-    printf("Write the password: \n");
-    fgets(password,sizeof(password), stdin);
-
-    bool found = ssid_found(ssid);
-
-    if(found){
-        ESP_LOGI("INFO","Successfully found the WiFi AP '%s'!", ssid);
-        connect_to_network(ssid,password);
-    } else {
-        ESP_LOGI("INFO","WiFi AP '%s' was not found!", ssid);
-    }
-
-    while(true){
-        ESP_LOGI("WIFI_TASK","I AM PINGING!!!");
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-    }
 }

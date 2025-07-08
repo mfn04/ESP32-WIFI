@@ -4,13 +4,16 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "string.h"
+#include "uart_funcs.h"
 
 bool err_handle(esp_err_t err);
 
-bool ssid_found(const char* ssid);
+bool search_ssid(const char* ssid);
 
-bool connect_to_network(const char* ssid, const char* password);
+bool connect_to_network(void);
 
-void wifi_init(void*);
+bool connect_to_network_creds(const char* ssid, const char* password);
+
+void wifi_init(void);
 
 #endif

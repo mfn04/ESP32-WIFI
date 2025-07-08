@@ -10,13 +10,20 @@ void app_main() {
 
     ESP_ERROR_CHECK(nvs_flash_init());
 
-    ESP_ERROR_CHECK(esp_netif_init());
-
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    TaskHandle_t wifi_handler = NULL;
+    uart_init();
+    
+    wifi_init();
 
-    xTaskCreate(wifi_init,"wifi_task",4096,NULL,tskIDLE_PRIORITY,&wifi_handler);
+    bool connected = false;
+    do{
+        connected = connect_to_network();
+    } while(!connected);
+
+    //TaskHandle_t wifi_handler = NULL;
+
+    //xTaskCreate(wifi_init,"wifi_task",4096,NULL,tskIDLE_PRIORITY,&wifi_handler);
 
     while(true){
         ESP_LOGI("APP_MAIN","I AM MAIN FUNCTION!");
